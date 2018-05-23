@@ -10,39 +10,46 @@ namespace MaterialShowcase
 {
 	class MaterialShowcaseInstructionView : UIView
 	{
-		private const int SkipSpacing = 40;
+		//		private const int SkipSpacing = 40;
 
 		internal static float PRIMARY_TEXT_SIZE = 20f;
 		internal static float SECONDARY_TEXT_SIZE = 15f;
+		internal static float NEXT_TEXT_SIZE = 15f;
 		internal static float SKIP_TEXT_SIZE = 15f;
 		internal static UIColor PRIMARY_TEXT_COLOR = UIColor.White;
 		internal static UIColor SECONDARY_TEXT_COLOR = UIColor.White.ColorWithAlpha(0.87f);
+		internal static UIColor NEXT_TEXT_COLOR = UIColor.White.ColorWithAlpha(0.87f);
 		internal static UIColor SKIP_TEXT_COLOR = UIColor.White.ColorWithAlpha(0.87f);
 		internal static string PRIMARY_DEFAULT_TEXT = "Awesome action";
 		internal static string SECONDARY_DEFAULT_TEXT = "Tap here to do some awesome thing";
+		internal static string NEXT_DEFAULT_TEXT = "Next";
 		internal static string SKIP_DEFAULT_TEXT = "Skip";
 
 		UILabel _primaryLabel;
 		UILabel _secondaryLabel;
+		UILabel _nextLabel;
 		UILabel _skipLabel;
 
 		public string PrimaryText { get; set; }
 		public string SecondaryText { get; set; }
+		public string NextText { get; set; }
 		public string SkipText { get; set; }
 		public UIColor PrimaryTextColor { get; set; }
 		public UIColor SecondaryTextColor { get; set; }
+		public UIColor NextTextColor { get; set; }
 		public UIColor SkipTextColor { get; set; }
 		public float PrimaryTextSize { get; set; }
 		public float SecondaryTextSize { get; set; }
+		public float NextTextSize { get; set; }
 		public float SkipTextSize { get; set; }
 		public UIFont PrimaryTextFont { get; set; }
 		public UIFont SecondaryTextFont { get; set; }
+		public UIFont NextTextFont { get; set; }
 		public UIFont SkipTextFont { get; set; }
 		public UITextAlignment PrimaryTextAlignment { get; set; }
 		public UITextAlignment SecondaryTextAlignment { get; set; }
-		public UITextAlignment SkipTextAlignment { get; set; }
 
-		public event Action Skipped;
+		public event Action<bool> ButtonPressed;
 
 		public MaterialShowcaseInstructionView() : base(new CGRect(x: 0, y: 0, width: UIScreen.MainScreen.Bounds.Width, height: 0))
 		{
@@ -62,17 +69,23 @@ namespace MaterialShowcase
 
 			SecondaryText = MaterialShowcaseInstructionView.SECONDARY_DEFAULT_TEXT;
 
+			NextText = MaterialShowcaseInstructionView.NEXT_DEFAULT_TEXT;
+
 			SkipText = MaterialShowcaseInstructionView.SKIP_DEFAULT_TEXT;
 
 			PrimaryTextColor = MaterialShowcaseInstructionView.PRIMARY_TEXT_COLOR;
 
 			SecondaryTextColor = MaterialShowcaseInstructionView.SECONDARY_TEXT_COLOR;
 
+			NextTextColor = MaterialShowcaseInstructionView.NEXT_TEXT_COLOR;
+
 			SkipTextColor = MaterialShowcaseInstructionView.SKIP_TEXT_COLOR;
 
 			PrimaryTextSize = MaterialShowcaseInstructionView.PRIMARY_TEXT_SIZE;
 
 			SecondaryTextSize = MaterialShowcaseInstructionView.SECONDARY_TEXT_SIZE;
+
+			NextTextSize = MaterialShowcaseInstructionView.NEXT_TEXT_SIZE;
 
 			SkipTextSize = MaterialShowcaseInstructionView.SKIP_TEXT_SIZE;
 		}
@@ -112,14 +125,44 @@ namespace MaterialShowcase
 			AddSubview(_secondaryLabel);
 		}
 
-		private UIGestureRecognizer GetTapGestureRecognizer()
+		private UIGestureRecognizer GetTapGestureRecognizer(bool skipped)
 		{
-			var tapGesture = new UITapGestureRecognizer(() => { Skipped?.Invoke(); })
+			var tapGesture = new UITapGestureRecognizer(() => { ButtonPressed?.Invoke(skipped); })
 			{
 				NumberOfTapsRequired = 1,
 				NumberOfTouchesRequired = 1
 			};
 			return tapGesture;
+		}
+
+		private void AddNextLabel()
+		{
+			_nextLabel = new UILabel();
+
+			_nextLabel.Font = NextTextFont != null ? NextTextFont : UIFont.SystemFontOfSize(NextTextSize);
+			_nextLabel.TextColor = NextTextColor;
+			_nextLabel.TextAlignment = UITextAlignment.Center;
+			_nextLabel.LineBreakMode = UILineBreakMode.WordWrap;
+			_nextLabel.Text = NextText;
+			_nextLabel.Lines = 3;
+			_nextLabel.SizeToFit();
+			var height = _nextLabel.Frame.Height;
+			var width = _nextLabel.Frame.Width;
+			_nextLabel.Frame = new CGRect(x: Frame.Width - width, y: Frame.Height - height, width: width, height: height);
+			if (!string.IsNullOrEmpty(NextText))
+			{
+				UserInteractionEnabled = true;
+				_nextLabel.UserInteractionEnabled = true;
+				// Add next tap gesture
+				_nextLabel.AddGestureRecognizer(GetTapGestureRecognizer(false));
+			}
+			else
+			{
+				_nextLabel.UserInteractionEnabled = false;
+				UserInteractionEnabled = false;
+			}
+
+			AddSubview(_nextLabel);
 		}
 
 		private void AddSkipLabel()
@@ -128,18 +171,20 @@ namespace MaterialShowcase
 
 			_skipLabel.Font = SkipTextFont != null ? SkipTextFont : UIFont.SystemFontOfSize(SkipTextSize);
 			_skipLabel.TextColor = SkipTextColor;
-			_skipLabel.TextAlignment = SkipTextAlignment;
+			_skipLabel.TextAlignment = UITextAlignment.Center;
 			_skipLabel.LineBreakMode = UILineBreakMode.WordWrap;
 			_skipLabel.Text = SkipText;
 			_skipLabel.Lines = 3;
-			_skipLabel.Frame = new CGRect(x: 0, y: _secondaryLabel.Frame.Bottom + SkipSpacing, width: GetWidth(), height: 0);
-			_skipLabel.SizeToFitHeight();
+			_skipLabel.SizeToFit();
+			var height = _skipLabel.Frame.Height;
+			var width = _skipLabel.Frame.Width;
+			_skipLabel.Frame = new CGRect(x: 0, y: Frame.Height - height, width: width, height: height);
 			if (!string.IsNullOrEmpty(SkipText))
 			{
 				UserInteractionEnabled = true;
 				_skipLabel.UserInteractionEnabled = true;
 				// Add skip tap gesture
-				_skipLabel.AddGestureRecognizer(GetTapGestureRecognizer());
+				_skipLabel.AddGestureRecognizer(GetTapGestureRecognizer(true));
 			}
 			else
 			{
@@ -148,8 +193,6 @@ namespace MaterialShowcase
 			}
 
 			AddSubview(_skipLabel);
-
-			Frame = new CGRect(x: Frame.GetMinX(), y: Frame.GetMinY(), width: GetWidth(), height: _primaryLabel.Frame.Height + _secondaryLabel.Frame.Height + SkipSpacing + _skipLabel.Frame.Height);
 		}
 
 		// Calculate width per device
@@ -175,6 +218,7 @@ namespace MaterialShowcase
 			base.LayoutSubviews();
 			AddPrimaryLabel();
 			AddSecondaryLabel();
+			AddNextLabel();
 			AddSkipLabel();
 		}
 	}

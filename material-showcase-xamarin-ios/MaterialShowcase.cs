@@ -9,7 +9,7 @@ using UIKit;
 
 namespace MaterialShowcase
 {
-	public enum BackgroundTypeStyle { Circle, Full }
+	public enum BackgroundTypeStyle { Full }
 	public enum TargetShape { Circle, Rectangle, None }
 
 	public class MaterialShowcase : UIView
@@ -52,12 +52,13 @@ namespace MaterialShowcase
 
 		public UIColor BackgroundPromptColor { get; set; }
 		public float BackgroundPromptColorAlpha { get; set; } = 0.0f;
-		public BackgroundTypeStyle BackgroundViewType { get; set; } = BackgroundTypeStyle.Circle;
+		public BackgroundTypeStyle BackgroundViewType { get; set; } = BackgroundTypeStyle.Full;
 		public TargetShape TargetShape { get; set; }
 		// Tap zone settings
 		// - false: recognize tap from all displayed showcase.
 		// - true: recognize tap for targetView area only.
-		public bool IsTapRecognizerForTargetView { get; set; } = false;
+		public enum TapTargetType { All, Target, None }
+		public TapTargetType TapTarget { get; set; } = TapTargetType.None;
 		// Target
 		public bool ShouldSetTintColor { get; set; } = true;
 		public UIColor TargetTintColor { get; set; }
@@ -66,19 +67,23 @@ namespace MaterialShowcase
 		// Text
 		public string PrimaryText { get; set; }
 		public string SecondaryText { get; set; }
+		public string NextText { get; set; }
 		public string SkipText { get; set; }
 		public UIColor PrimaryTextColor { get; set; }
 		public UIColor SecondaryTextColor { get; set; }
+		public UIColor NextTextColor { get; set; }
 		public UIColor SkipTextColor { get; set; }
 		public float PrimaryTextSize { get; set; }
 		public float SecondaryTextSize { get; set; }
+		public float NextTextSize { get; set; }
 		public float SkipTextSize { get; set; }
 		public UIFont PrimaryTextFont { get; set; }
 		public UIFont SecondaryTextFont { get; set; }
+		public UIFont NextTextFont { get; set; }
 		public UIFont SkipTextFont { get; set; }
 		public UITextAlignment PrimaryTextAlignment { get; set; }
 		public UITextAlignment SecondaryTextAlignment { get; set; }
-		public UITextAlignment SkipTextAlignment { get; set; }
+
 		// Animation
 		public float AniComeInDuration { get; set; } = 0f;
 		public float AniGoOutDuration { get; set; } = 0f;
@@ -245,11 +250,15 @@ namespace MaterialShowcase
 
 			SecondaryText = MaterialShowcaseInstructionView.SECONDARY_DEFAULT_TEXT;
 
+			NextText = MaterialShowcaseInstructionView.NEXT_DEFAULT_TEXT;
+
 			SkipText = MaterialShowcaseInstructionView.SKIP_DEFAULT_TEXT;
 
 			PrimaryTextColor = MaterialShowcaseInstructionView.PRIMARY_TEXT_COLOR;
 
 			SecondaryTextColor = MaterialShowcaseInstructionView.SECONDARY_TEXT_COLOR;
+
+			NextTextColor = MaterialShowcaseInstructionView.NEXT_TEXT_COLOR;
 
 			SkipTextColor = MaterialShowcaseInstructionView.SKIP_TEXT_COLOR;
 
@@ -257,7 +266,10 @@ namespace MaterialShowcase
 
 			SecondaryTextSize = MaterialShowcaseInstructionView.SECONDARY_TEXT_SIZE;
 
+			NextTextSize = MaterialShowcaseInstructionView.NEXT_TEXT_SIZE;
+
 			SkipTextSize = MaterialShowcaseInstructionView.SKIP_TEXT_SIZE;
+
 			// Animation
 			AniComeInDuration = ANI_COMEIN_DURATION;
 
@@ -335,13 +347,13 @@ namespace MaterialShowcase
 				AddBackground();
 			}
 
-			if (IsTapRecognizerForTargetView && !Equals(TargetHolderColor, UIColor.Clear))
+			if (TapTarget == TapTargetType.Target && !Equals(TargetHolderColor, UIColor.Clear))
 			{
 				//Add gesture recognizer for targetCopyView
 				_targetCopyView.AddGestureRecognizer(GetTapGestureRecognizer(animated));
 				_targetCopyView.UserInteractionEnabled = true;
 			}
-			else
+			else if (TapTarget != TapTargetType.None)
 			{
 				// Add gesture recognizer for both container and its subview
 				var tapView = new UIView(Frame);
@@ -357,23 +369,23 @@ namespace MaterialShowcase
 		{
 			switch (BackgroundViewType)
 			{
-				case BackgroundTypeStyle.Circle:
-					float radius;
-					var center = _targetRippleView.Center;//getOuterCircleCenterPoint(for: targetCopyView)
-					if (UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Pad)
-					{
-						radius = 300.0f;
-					}
-					else
-					{
-						radius = Utils.GetOuterCircleRadius(center: center, textBounds: _instructionView.Frame, targetBounds: _targetRippleView.Frame);
-
-					}
-
-					_backgroundView = new UIView(frame: new CGRect(x: 0, y: 0, width: radius * 2, height: radius * 2));
-					_backgroundView.Center = center;
-					_backgroundView.AsCircle();
-					break;
+				//				case BackgroundTypeStyle.Circle:
+				//					float radius;
+				//					var center = _targetRippleView.Center;//getOuterCircleCenterPoint(for: targetCopyView)
+				//					if (UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Pad)
+				//					{
+				//						radius = 300.0f;
+				//					}
+				//					else
+				//					{
+				//						radius = Utils.GetOuterCircleRadius(center: center, textBounds: _instructionView.Frame, targetBounds: _targetRippleView.Frame);
+				//
+				//					}
+				//
+				//					_backgroundView = new UIView(frame: new CGRect(x: 0, y: 0, width: radius * 2, height: radius * 2));
+				//					_backgroundView.Center = center;
+				//					_backgroundView.AsCircle();
+				//					break;
 
 				case BackgroundTypeStyle.Full:
 					_backgroundView = new UIView(frame: new CGRect(x: 0, y: 0, width: UIScreen.MainScreen.Bounds.Width, height: UIScreen.MainScreen.Bounds.Height));
@@ -388,7 +400,7 @@ namespace MaterialShowcase
 		//
 		private void AddBackgroundMask(float radius, UIView view)
 		{
-			var center = BackgroundViewType == BackgroundTypeStyle.Circle ? view.Bounds.Center() : _targetRippleView.Center;
+			var center = _targetRippleView.Center;
 			var mutablePath = new CGPath();
 			mutablePath.AddRect(view.Bounds);
 			if (TargetShape == TargetShape.Circle)
@@ -508,48 +520,27 @@ namespace MaterialShowcase
 		private void AddInstructionView(CGPoint center, bool animated = true)
 		{
 			_instructionView = new MaterialShowcaseInstructionView();
-			_instructionView.Skipped += () => { CompleteShowcase(animated, true); };
+			_instructionView.ButtonPressed += skipped => { CompleteShowcase(animated, skipped); };
 			_instructionView.PrimaryTextAlignment = PrimaryTextAlignment;
 			_instructionView.PrimaryTextFont = PrimaryTextFont;
-
-
 			_instructionView.PrimaryTextSize = PrimaryTextSize;
-
-
 			_instructionView.PrimaryTextColor = PrimaryTextColor;
-
-
 			_instructionView.PrimaryText = PrimaryText;
 
-
-
 			_instructionView.SecondaryTextAlignment = SecondaryTextAlignment;
-
-
 			_instructionView.SecondaryTextFont = SecondaryTextFont;
-
-
 			_instructionView.SecondaryTextSize = SecondaryTextSize;
-
-
 			_instructionView.SecondaryTextColor = SecondaryTextColor;
-
-
 			_instructionView.SecondaryText = SecondaryText;
 
-
-			_instructionView.SkipTextAlignment = SkipTextAlignment;
-
+			_instructionView.NextTextFont = NextTextFont;
+			_instructionView.NextTextSize = NextTextSize;
+			_instructionView.NextTextColor = NextTextColor;
+			_instructionView.NextText = NextText;
 
 			_instructionView.SkipTextFont = SkipTextFont;
-
-
 			_instructionView.SkipTextSize = SkipTextSize;
-
-
 			_instructionView.SkipTextColor = SkipTextColor;
-
-
 			_instructionView.SkipText = SkipText;
 
 			// Calculate x position
@@ -560,6 +551,7 @@ namespace MaterialShowcase
 
 			// Calculate instructionView width
 			nfloat width;
+			nfloat height;
 
 			if (UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Pad)
 			{
@@ -587,6 +579,8 @@ namespace MaterialShowcase
 				{
 					yPosition = TEXT_CENTER_OFFSET + LABEL_DEFAULT_HEIGHT * 2;
 				}
+
+				height = _containerView.Frame.Height - yPosition - LABEL_MARGIN;
 			}
 			else
 			{
@@ -601,10 +595,11 @@ namespace MaterialShowcase
 
 				}
 
-				width = _containerView.Frame.Width - (xPosition + xPosition);
+				width = _containerView.Frame.Width - (LABEL_MARGIN + LABEL_MARGIN);
+				height = _containerView.Frame.Height - yPosition - LABEL_MARGIN;
 			}
 
-			_instructionView.Frame = new CGRect(x: xPosition, y: yPosition, width: width, height: 0);
+			_instructionView.Frame = new CGRect(x: xPosition, y: yPosition, width: width, height: height);
 
 
 			if (UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Pad)
