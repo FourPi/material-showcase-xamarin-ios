@@ -101,8 +101,13 @@ namespace MaterialShowcase
 			_primaryLabel.Lines = 0;
 			_primaryLabel.LineBreakMode = UILineBreakMode.WordWrap;
 			_primaryLabel.Text = PrimaryText;
-
-			_primaryLabel.Frame = new CGRect(x: 0, y: 0, width: GetWidth(), height: 0);
+			_primaryLabel.SizeToFit();
+			var height = _primaryLabel.Frame.Height;
+			var width = _primaryLabel.Frame.Width;
+			var maxWidth = Frame.Width - (MaterialShowcase.LABEL_MARGIN * 2);
+			if (width > maxWidth)
+				width = maxWidth;
+			_primaryLabel.Frame = new CGRect(x: (Bounds.Width - width) * 0.5, y: Bounds.Center().Y - height, width: width, height: height);
 			_primaryLabel.SizeToFitHeight();
 			_primaryLabel.UserInteractionEnabled = false;
 			AddSubview(_primaryLabel);
@@ -119,7 +124,13 @@ namespace MaterialShowcase
 			_secondaryLabel.LineBreakMode = UILineBreakMode.WordWrap;
 			_secondaryLabel.Text = SecondaryText;
 			_secondaryLabel.Lines = 3;
-			_secondaryLabel.Frame = new CGRect(x: 0, y: _primaryLabel.Frame.Bottom, width: GetWidth(), height: 0);
+			_secondaryLabel.SizeToFit();
+			var height = _secondaryLabel.Frame.Height;
+			var width = _secondaryLabel.Frame.Width;
+			var maxWidth = Frame.Width - (MaterialShowcase.LABEL_MARGIN * 2);
+			if (width > maxWidth)
+				width = maxWidth;
+			_secondaryLabel.Frame = new CGRect(x: (Bounds.Width - width) * 0.5, y: _primaryLabel.Frame.Bottom, width: width, height: height);
 			_secondaryLabel.SizeToFitHeight();
 			_secondaryLabel.UserInteractionEnabled = false;
 			AddSubview(_secondaryLabel);
@@ -145,9 +156,10 @@ namespace MaterialShowcase
 			_nextLabel.LineBreakMode = UILineBreakMode.WordWrap;
 			_nextLabel.Text = NextText;
 			_nextLabel.Lines = 3;
+			//			_nextLabel.BackgroundColor = UIColor.Green;
 			_nextLabel.SizeToFit();
-			var height = _nextLabel.Frame.Height;
-			var width = _nextLabel.Frame.Width;
+			var height = _nextLabel.Frame.Height + (MaterialShowcase.LABEL_MARGIN * 2);
+			var width = _nextLabel.Frame.Width + (MaterialShowcase.LABEL_MARGIN * 2);
 			_nextLabel.Frame = new CGRect(x: Frame.Width - width, y: Frame.Height - height, width: width, height: height);
 			if (!string.IsNullOrEmpty(NextText))
 			{
@@ -175,9 +187,10 @@ namespace MaterialShowcase
 			_skipLabel.LineBreakMode = UILineBreakMode.WordWrap;
 			_skipLabel.Text = SkipText;
 			_skipLabel.Lines = 3;
+			//			_skipLabel.BackgroundColor = UIColor.Red;
 			_skipLabel.SizeToFit();
-			var height = _skipLabel.Frame.Height;
-			var width = _skipLabel.Frame.Width;
+			var height = _skipLabel.Frame.Height + (MaterialShowcase.LABEL_MARGIN * 2);
+			var width = _skipLabel.Frame.Width + (MaterialShowcase.LABEL_MARGIN * 2);
 			_skipLabel.Frame = new CGRect(x: 0, y: Frame.Height - height, width: width, height: height);
 			if (!string.IsNullOrEmpty(SkipText))
 			{
@@ -193,23 +206,6 @@ namespace MaterialShowcase
 			}
 
 			AddSubview(_skipLabel);
-		}
-
-		// Calculate width per device
-		private float GetWidth()
-		{
-			//superview was left side
-			if (Superview?.Frame.Location.X >= 0)
-			{
-				return (float)(Frame.Width - (Frame.GetMinX() / 2));
-			}
-			else if ((Superview?.Frame.Location.X + Superview?.Frame.Size.Width) > UIScreen.MainScreen.Bounds.Width)
-			{ //superview was right side
-				return (float)((Frame.Width - Frame.GetMinX()) / 2);
-
-			}
-
-			return (float)(Frame.Width - Frame.GetMinX());
 		}
 
 		/// Overrides this to add subviews. They will be drawn when calling show()

@@ -20,7 +20,7 @@ namespace MaterialShowcase
 		public static float TARGET_HOLDER_RADIUS = 44f;
 		public static float TEXT_CENTER_OFFSET = 44 + 20f;
 		public static float INSTRUCTIONS_CENTER_OFFSET = 20f;
-		public static float LABEL_MARGIN = 40f;
+		public static float LABEL_MARGIN = 20f;
 		public static float TARGET_PADDING = 20f;
 
 		public static float LABEL_DEFAULT_HEIGHT = 50f;
@@ -332,20 +332,11 @@ namespace MaterialShowcase
 				AddTarget(center);
 			}
 
-			//In iPad version InstructionView was add to backgroundView
-			if (UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Pad)
-			{
-				AddBackground();
-			}
-
 			AddInstructionView(center, animated);
 
 			_instructionView.LayoutIfNeeded();
-			//In iPhone version InstructionView was add to self view
-			if (UIDevice.CurrentDevice.UserInterfaceIdiom != UIUserInterfaceIdiom.Pad)
-			{
-				AddBackground();
-			}
+
+			AddBackground();
 
 			if (TapTarget == TapTargetType.Target && !Equals(TargetHolderColor, UIColor.Clear))
 			{
@@ -542,9 +533,8 @@ namespace MaterialShowcase
 			_instructionView.SkipTextSize = SkipTextSize;
 			_instructionView.SkipTextColor = SkipTextColor;
 			_instructionView.SkipText = SkipText;
-
 			// Calculate x position
-			var xPosition = LABEL_MARGIN;
+			var xPosition = 0.0f;//LABEL_MARGIN;
 
 			// Calculate y position
 			nfloat yPosition;
@@ -553,63 +543,31 @@ namespace MaterialShowcase
 			nfloat width;
 			nfloat height;
 
-			if (UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Pad)
+			xPosition = 0;
+			if (TargetShape == TargetShape.None)
 			{
-				width = _backgroundView.Frame.Width - xPosition;
-
-				if (_backgroundView.Frame.Location.X < 0)
-				{
-					xPosition = (float)(Math.Abs(_backgroundView.Frame.Location.X) + xPosition);
-				}
-				else if (_backgroundView.Frame.Location.X + _backgroundView.Frame.Size.Width >
-				UIScreen.MainScreen.Bounds.Width)
-				{
-					width = _backgroundView.Frame.Size.Width - (xPosition * 2);
-				}
-				if (xPosition + width > _backgroundView.Frame.Size.Width)
-				{
-					width = width - (xPosition / 2f);
-				}
-
-				if (GetTargetPosition(_targetView, _containerView) == TargetPosition.Above)
-				{
-					yPosition = (_backgroundView.Frame.Size.Height / 2) + TEXT_CENTER_OFFSET;
-				}
-				else
-				{
-					yPosition = TEXT_CENTER_OFFSET + LABEL_DEFAULT_HEIGHT * 2;
-				}
-
-				height = _containerView.Frame.Height - yPosition - LABEL_MARGIN;
+				yPosition = 0;
+				height = _containerView.Frame.Height;
 			}
 			else
 			{
 				if (_targetView != null && GetTargetPosition(_targetView, _containerView) == TargetPosition.Above)
 				{
-					yPosition = center.Y + TARGET_PADDING + (_targetView.Bounds.Height / 2 > TargetHolderRadius ? _targetView.Bounds.Height / 2 : TargetHolderRadius);
+					yPosition = center.Y + (_targetView.Bounds.Height * 0.5f) + TargetHolderRadius;
+					height = _containerView.Frame.Height - yPosition;
 				}
 				else
 				{
-					yPosition = center.Y - TEXT_CENTER_OFFSET - LABEL_DEFAULT_HEIGHT * 2;
-
-
+					yPosition = 0; //center.Y - TEXT_CENTER_OFFSET - LABEL_DEFAULT_HEIGHT * 2;
+					height = center.Y - (_targetView.Bounds.Height * 0.5f);
 				}
-
-				width = _containerView.Frame.Width - (LABEL_MARGIN + LABEL_MARGIN);
-				height = _containerView.Frame.Height - yPosition - LABEL_MARGIN;
 			}
+
+			width = _containerView.Frame.Width;// - (LABEL_MARGIN + LABEL_MARGIN);
 
 			_instructionView.Frame = new CGRect(x: xPosition, y: yPosition, width: width, height: height);
 
-
-			if (UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Pad)
-			{
-				_backgroundView.AddSubview(_instructionView);
-			}
-			else
-			{
-				AddSubview(_instructionView);
-			}
+			AddSubview(_instructionView);
 		}
 
 		public void CompleteShowcase(bool animated = true, bool skipped = false)
