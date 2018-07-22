@@ -200,33 +200,44 @@ namespace MaterialShowcase
 		// It will return null if no showcase exists.
 		public static List<MaterialShowcase> PresentedShowcases()
 		{
+			UIWindow highestWindow = HighestWindow();
+
+			return (highestWindow?.Subviews)?.OfType<MaterialShowcase>().ToList();
+		}
+
+		private static UIWindow HighestWindow()
+		{
 			var windows = UIApplication.SharedApplication.Windows;
-			UIWindow lowestWindow = null;
+			UIWindow highestWindow = null;
 			foreach (var window in windows)
 			{
-				if (lowestWindow == null || (window.WindowLevel < lowestWindow.WindowLevel))
-					lowestWindow = window;
+				if (highestWindow == null || (window.WindowLevel > highestWindow.WindowLevel))
+					highestWindow = window;
 			}
 
-			return (lowestWindow?.Subviews)?.OfType<MaterialShowcase>().ToList();
+			return highestWindow;
+			//
+			//			var windows = UIApplication.SharedApplication.Windows;
+			//			UIWindow lowestWindow = null;
+			//			foreach (var window in windows)
+			//			{
+			//				if (lowestWindow == null || (window.WindowLevel < lowestWindow.WindowLevel))
+			//					lowestWindow = window;
+			//			}
+			//
+			//			return lowestWindow;
 		}
 
 		/// Initializes default view properties
 		void Configure()
 		{
 			BackgroundColor = UIColor.Clear;
-			var windows = UIApplication.SharedApplication.Windows;
-			UIWindow lowestWindow = null;
-			foreach (var window in windows)
-			{
-				if (lowestWindow == null || (window.WindowLevel < lowestWindow.WindowLevel))
-					lowestWindow = window;
-			}
-			if (lowestWindow == null)
+			UIWindow highestWindow = HighestWindow();
+			if (highestWindow == null)
 			{
 				return;
 			}
-			_containerView = lowestWindow;
+			_containerView = highestWindow;
 			SetDefaultProperties();
 		}
 
