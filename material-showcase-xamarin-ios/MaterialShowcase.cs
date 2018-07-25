@@ -360,9 +360,12 @@ namespace MaterialShowcase
                 // Add gesture recognizer for both container and its subview
                 var tapView = new UIView(Frame);
                 tapView.BackgroundColor = UIColor.Clear;
-                AddSubview(tapView);
-                SendSubviewToBack(tapView);
+                InsertSubviewBelow(tapView, _instructionView);
+                //AddSubview(tapView);
+                //SendSubviewToBack(tapView);
                 tapView.AddGestureRecognizer(GetTapGestureRecognizer(animated));
+                _instructionView.UserInteractionEnabled = true;
+                _instructionView.AddGestureRecognizer(GetTapGestureRecognizer(animated));
             }
         }
 
