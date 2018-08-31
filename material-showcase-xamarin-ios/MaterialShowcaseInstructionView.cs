@@ -91,9 +91,13 @@ namespace MaterialShowcase
         }
 
         // Configures and adds primary label view
-        private void AddPrimaryLabel()
-        {
-            _primaryLabel = new UILabel();
+		private void LayoutPrimaryLabel()
+		{
+			if (_primaryLabel == null)
+			{
+				_primaryLabel = new UILabel();
+				AddSubview(_primaryLabel);
+			}
 
             _primaryLabel.Font = PrimaryTextFont != null ? PrimaryTextFont : UIFont.BoldSystemFontOfSize(PrimaryTextSize);
             _primaryLabel.TextColor = PrimaryTextColor;
@@ -110,14 +114,16 @@ namespace MaterialShowcase
             _primaryLabel.Frame = new CGRect(x: (Bounds.Width - width) * 0.5, y: Bounds.Center().Y - height, width: width, height: height);
             _primaryLabel.SizeToFitHeight();
             _primaryLabel.UserInteractionEnabled = false;
-            AddSubview(_primaryLabel);
         }
 
         // Configures and adds secondary label view
-        private void AddSecondaryLabel()
-        {
-            _secondaryLabel = new UILabel();
-
+		private void LayoutSecondaryLabel()
+		{
+			if (_secondaryLabel == null)
+			{
+				_secondaryLabel = new UILabel();
+				AddSubview(_secondaryLabel);
+			}
             _secondaryLabel.Font = SecondaryTextFont != null ? SecondaryTextFont : UIFont.SystemFontOfSize(SecondaryTextSize);
             _secondaryLabel.TextColor = SecondaryTextColor;
             _secondaryLabel.TextAlignment = SecondaryTextAlignment;
@@ -133,7 +139,6 @@ namespace MaterialShowcase
             _secondaryLabel.Frame = new CGRect(x: (Bounds.Width - width) * 0.5, y: _primaryLabel.Frame.Bottom, width: width, height: height);
             _secondaryLabel.SizeToFitHeight();
             _secondaryLabel.UserInteractionEnabled = false;
-            AddSubview(_secondaryLabel);
         }
 
         private UIGestureRecognizer GetTapGestureRecognizer(bool skipped)
@@ -146,10 +151,13 @@ namespace MaterialShowcase
             return tapGesture;
         }
 
-        private void AddNextLabel()
-        {
-            _nextLabel = new UILabel();
-
+		private void LayoutNextLabel()
+		{
+			if (_nextLabel == null)
+			{
+				_nextLabel = new UILabel();
+				AddSubview(_nextLabel);
+			}
             _nextLabel.Font = NextTextFont != null ? NextTextFont : UIFont.SystemFontOfSize(NextTextSize);
             _nextLabel.TextColor = NextTextColor;
             _nextLabel.TextAlignment = UITextAlignment.Center;
@@ -173,14 +181,15 @@ namespace MaterialShowcase
                 _nextLabel.UserInteractionEnabled = false;
                 UserInteractionEnabled = false;
             }
-
-            AddSubview(_nextLabel);
         }
 
-        private void AddSkipLabel()
-        {
-            _skipLabel = new UILabel();
-
+		private void LayoutSkipLabel()
+		{
+			if (_skipLabel == null)
+			{
+				_skipLabel = new UILabel();
+				AddSubview(_skipLabel);
+			}
             _skipLabel.Font = SkipTextFont != null ? SkipTextFont : UIFont.SystemFontOfSize(SkipTextSize);
             _skipLabel.TextColor = SkipTextColor;
             _skipLabel.TextAlignment = UITextAlignment.Center;
@@ -204,18 +213,16 @@ namespace MaterialShowcase
                 _skipLabel.UserInteractionEnabled = false;
                 UserInteractionEnabled = false;
             }
-
-            AddSubview(_skipLabel);
         }
 
         /// Overrides this to add subviews. They will be drawn when calling show()
         public override void LayoutSubviews()
         {
             base.LayoutSubviews();
-            AddPrimaryLabel();
-            AddSecondaryLabel();
-            AddNextLabel();
-            AddSkipLabel();
+			LayoutPrimaryLabel();
+			LayoutSecondaryLabel();
+			LayoutNextLabel();
+			LayoutSkipLabel();
         }
     }
 }
