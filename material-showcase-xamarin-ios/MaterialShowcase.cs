@@ -50,6 +50,7 @@ namespace MaterialShowcase
         UIView _targetCopyView;
         UIView _tapView;
         private MaterialShowcaseInstructionView _instructionView;
+        private UIStatusBarStyle _previousStyle;
 
         public UIColor BackgroundPromptColor { get; set; }
         public float BackgroundPromptColorAlpha { get; set; } = 0.0f;
@@ -159,6 +160,22 @@ namespace MaterialShowcase
             TargetHolderRadius = 0;
         }
 
+        public override void LayoutSubviews()
+        {
+            base.LayoutSubviews();
+            var newFrame = new CGRect(x: 0, y: 0, width: UIScreen.MainScreen.Bounds.Width,
+                height: UIScreen.MainScreen.Bounds.Height);
+            if (!newFrame.Equals(Frame))
+            {
+                Frame = newFrame;
+                //            InitViews(true);
+                LayoutIfNeeded();
+                UpdateViewFrames();
+            }
+
+            //            Show(false);
+        }
+
         // Shows it over current screen after completing setup process
         public void Show(bool animated = true, Action completionHandler = null)
         {
@@ -173,51 +190,69 @@ namespace MaterialShowcase
 
             Alpha = 0.0f;
 
-            _containerView.AddSubview(this);
+            if (!_containerView.Subviews.Contains(this))
+                _containerView.AddSubview(this);
+
             LayoutIfNeeded();
-            UpdateViewFrames();
+            UpdateViewFrames(animated);
 
-            var scale = TARGET_HOLDER_RADIUS / (_backgroundView.Frame.Width / 2);
-            var center = _backgroundView.Center;
-
-            _backgroundView.Transform = CGAffineTransform.MakeScale(scale, scale); // Initial set to support animation
-            _backgroundView.Center = _targetHolderView.Center;
+            //            var center = _backgroundView.Center;
+            var frameCenter = Frame.Center();
+            UpdateStatusBar(animated);
             if (animated)
             {
                 UIView.Animate(AniComeInDuration, () =>
                 {
-                    _targetHolderView.Transform = CGAffineTransform.MakeScale(1, 1);
-                    _targetHolderView.Center = center;
-                    _backgroundView.Transform = CGAffineTransform.MakeScale(1, 1);
-                    _backgroundView.Center = center;
+                    _targetHolderView.Transform = CGAffineTransform.MakeIdentity(); //CGAffineTransform.MakeScale(1, 1);
+                    _targetHolderView.Center = frameCenter;
+                    _backgroundView.Transform = CGAffineTransform.MakeIdentity(); //CGAffineTransform.MakeScale(1, 1);
+                    _backgroundView.Center = frameCenter;
                     Alpha = 1.0f;
 
                 }, StartAnimations);
             }
             else
             {
-                _targetHolderView.Transform = CGAffineTransform.MakeScale(1, 1);
-                _targetHolderView.Center = center;
-                _backgroundView.Transform = CGAffineTransform.MakeScale(1, 1);
-                _backgroundView.Center = center;
+                _targetHolderView.Transform = CGAffineTransform.MakeIdentity(); //CGAffineTransform.MakeScale(1, 1);
+                _targetHolderView.Center = frameCenter;
+                _backgroundView.Transform = CGAffineTransform.MakeIdentity(); //CGAffineTransform.MakeScale(1, 1);
+                _backgroundView.Center = frameCenter;
                 Alpha = 1.0f;
             }
+
             completionHandler?.Invoke();
         }
 
-        private void UpdateViewFrames()
+        private void UpdateStatusBar(bool animated = false)
+        {
+            _previousStyle = UIKit.UIApplication.SharedApplication.StatusBarStyle;
+            // https://stackoverflow.com/questions/2509443/check-if-uicolor-is-dark-or-bright
+            BackgroundPromptColor.GetRGBA(out var r, out var g, out var b, out var a);
+            var luminosityThingo = ((r * 255 * 299) + (g * 255 * 587) + (b * 255 * 114)) / 1000.0;
+            //below 125 = use white
+            UIKit.UIApplication.SharedApplication.SetStatusBarStyle(
+                luminosityThingo < 125 ? UIKit.UIStatusBarStyle.LightContent : UIKit.UIStatusBarStyle.Default,
+                animated);
+        }
+
+        private void UndoStatusBar(bool animated = false)
+        {
+            UIKit.UIApplication.SharedApplication.SetStatusBarStyle(_previousStyle, animated);
+        }
+
+        private void UpdateViewFrames(bool animated = false)
         {
             var center = CalculateCenter(_targetView, _containerView);
             if (_targetView != null)
             {
-                _targetRippleView.Frame = new CGRect(x: 0, y: 0, width: _targetView.Bounds.Width + TargetHolderRadius, height: _targetView.Bounds.Height + TargetHolderRadius);
-
+                _targetRippleView.Bounds = new CGRect(x: 0, y: 0, width: _targetView.Bounds.Width + TargetHolderRadius,
+                    height: _targetView.Bounds.Height + TargetHolderRadius);
                 _targetRippleView.Center = center;
             }
 
             if (_targetHolderView != null && _targetRippleView != null)
             {
-                _targetHolderView.Frame = new CGRect(x: 0, y: 0, width: _targetRippleView.Bounds.Width,
+                _targetHolderView.Bounds = new CGRect(x: 0, y: 0, width: _targetRippleView.Bounds.Width,
                     height: _targetRippleView.Bounds.Height);
 
                 _targetHolderView.Center = center;
@@ -233,7 +268,7 @@ namespace MaterialShowcase
                 var targetCopyViewWidth = _targetCopyView.Frame.Width;
                 var targetCopyViewHeight = _targetCopyView.Frame.Height;
 
-                _targetCopyView.Frame =
+                _targetCopyView.Bounds =
                     new CGRect(x: 0, y: 0, width: targetCopyViewWidth, height: targetCopyViewHeight);
                 _targetCopyView.Center = center;
             }
@@ -290,6 +325,20 @@ namespace MaterialShowcase
                 }
 
                 AddBackgroundMask(TargetHolderRadius, _backgroundView);
+
+                var scale = TARGET_HOLDER_RADIUS / (_backgroundView.Frame.Width / 2);
+                _backgroundView.Transform = CGAffineTransform.MakeScale(scale, scale); // Initial set to support animation
+                _backgroundView.Center = _targetHolderView.Center;
+            }
+
+            //TODO move this somewhere better
+            if (!animated)
+            {
+                var frameCenter = Frame.Center();
+                _targetHolderView.Transform = CGAffineTransform.MakeIdentity(); //CGAffineTransform.MakeScale(1, 1);
+                _targetHolderView.Center = frameCenter;
+                _backgroundView.Transform = CGAffineTransform.MakeIdentity(); //CGAffineTransform.MakeScale(1, 1);
+                _backgroundView.Center = frameCenter;
             }
 
             if (_tapView != null)
@@ -400,6 +449,11 @@ namespace MaterialShowcase
 
         void InitViews(bool animated = true)
         {
+            foreach (var subview in Subviews)
+            {
+                subview.RemoveFromSuperview();
+            }
+
             AddTargetRipple();
             AddTargetHolder();
 
@@ -580,6 +634,7 @@ namespace MaterialShowcase
 
         public void CompleteShowcase(bool animated = true, bool skipped = false)
         {
+            UndoStatusBar(animated);
             ShowCaseWillDismiss?.Invoke(skipped);
             if (animated)
             {
